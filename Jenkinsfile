@@ -1,9 +1,9 @@
 #!groovy
 
-@Library('github.com/teecke/jenkins-pipeline-library@v3.3.1') _
+@Library('github.com/ayudadigital/jenkins-pipeline-library@v4.0.0') _
 
 // Initialize global config
-cfg = jplConfig('docker-flutter-builder', 'docker', '', [email:'pedroamador.rodriguez+teecke@gmail.com'])
+cfg = jplConfig('docker-flutter-builder', 'docker', '', [email: env.CI_NOTIFY_EMAIL_TARGETS])
 
 pipeline {
     agent { label 'docker' }
@@ -22,7 +22,7 @@ pipeline {
             }
         }
         stage ('Build') {
-            when { expression { cfg.BRANCH_NAME.startsWith('release/new') } }
+            when { branch 'release/new' }
             steps {
                 script {
                     sh "devcontrol build-all"
@@ -30,10 +30,10 @@ pipeline {
             }
         }
         stage('Make release') {
-            when { expression { cfg.BRANCH_NAME.startsWith('release/new') } }
+            when { branch 'release/new' }
             steps {
                 // Push all images with one sentence without using jenkins docker integration
-                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'teeckebot-docker-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker-token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                     sh '''docker login -u ${USERNAME} -p ${PASSWORD}
                     docker push teecke/docker-flutter-builder
                     '''
